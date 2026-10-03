@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Math Workspace - Linear Functions & Financial Math</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- KaTeX for Math Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .print-break-inside-avoid { break-inside: avoid; }
+      body { background-color: white !important; font-size: 11pt; }
+      .workspace-card { border: 1px solid #cbd5e1 !important; box-shadow: none !important; margin-bottom: 1.5rem !important; }
+      .canvas-container { border: 1px dashed #94a3b8 !important; background-color: #ffffff !important; }
+    }
+    canvas { touch-action: none; cursor: crosshair; }
+    .grid-bg {
+      background-size: 20px 20px;
+      background-image: 
+        linear-gradient(to right, rgba(226, 232, 240, 0.6) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(226, 232, 240, 0.6) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 pb-16">
+
+  <!-- Header Navigation -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40 no-print">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-indigo-600 rounded-lg text-white">
+          <i class="fa-solid fa-calculator text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Interactive Math Workspace</h1>
+          <p class="text-xs text-slate-400">Linear Functions & Financial Mathematics</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
+        <input id="student-name" type="text" placeholder="Student Name..." class="px-3 py-1.5 text-sm bg-slate-800 text-slate-100 border border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 w-36 md:w-44" />
+        
+        <button onclick="randomizeAllQuestions()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-md text-sm font-medium transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-dice text-sm"></i> Randomize Questions
+        </button>
+
+        <button onclick="window.print()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-print"></i> Print
+        </button>
+
+        <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-md text-xs font-mono text-emerald-400 flex items-center gap-2">
+          <span>AI Total Score:</span>
+          <span id="total-score-display" class="font-bold text-sm text-white">0 / 25</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-6xl mx-auto px-4 mt-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <span class="inline-block px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 rounded-full mb-2">Student Practice Worksheet</span>
+        <h2 class="text-2xl font-bold text-slate-900">Linear Equations & Financial Mathematics</h2>
+        <p class="text-slate-600 text-sm mt-1">Draw your step-by-step working directly on the canvas or upload a photo of handwritten work.</p>
+      </div>
+      <div class="hidden print:block text-right text-xs text-slate-700 space-y-1">
+        <p class="font-bold text-sm text-slate-900">Student: ______________________</p>
+        <p>Date: ________________________</p>
+        <p>Total Score: ______ / 25 Marks</p>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-6xl mx-auto px-4 mt-8 space-y-8" id="questions-container">
+    <!-- Questions rendered dynamically by JS -->
+  </main>
+
+  <script>
+    let questionsData = [];
+    const canvases = {};
+    const ctxs = {};
+    const states = {};
+    const questionScores = {};
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateQuestions() {
+      // Q1: Slope & Line Orientation (3 Marks)
+      const x1 = randInt(-6, 2);
+      const y1 = randInt(-5, 8);
+      let x2 = randInt(3, 9);
+      if (x2 === x1) x2 += 2;
+      const y2 = randInt(-8, 6);
+      const dy = y2 - y1;
+      const dx = x2 - x1;
+      const slopeVal = dy / dx;
+      const orientation = slopeVal > 0 ? "increasing" : (slopeVal < 0 ? "decreasing" : "horizontal");
+
+      // Q2: Perpendicular Line Equation (4 Marks)
+      const px = randInt(-4, 5);
+      const py = randInt(-5, 6);
+      const A = randInt(1, 4);
+      const B = randInt(2, 5);
+      const C = randInt(6, 15);
+      const mPerp = -B / A;
+
+      // Q3: Intersection Point of Two Lines (4 Marks)
+      const intX = randInt(-4, 5);
+      const intY = randInt(-4, 5);
+      const a1 = randInt(1, 3), b1 = randInt(2, 4);
+      const c1 = a1 * intX + b1 * intY;
+      let a2 = randInt(2, 5), b2 = -randInt(1, 4);
+      const c2 = a2 * intX + b2 * intY;
+
+      // Q4: Financial - Supply & Demand Equilibrium (4 Marks)
+      const qEq = randInt(12, 35) * 10;
+      const pEq = randInt(10, 25);
+      const ms = (randInt(2, 5) / 50);
+      const md = (randInt(2, 5) / 50);
+      const cs = pEq - ms * qEq;
+      const cd = pEq + md * qEq;
+
+      // Q5: Financial - Price Linear Depreciation (5 Marks)
+      const V0 = randInt(30, 60) * 1000;
+      const depRate = randInt(3, 6) * 1000;
+      const tCheck = randInt(3, 6);
+      const valT = V0 - depRate * tCheck;
+      const scrapYears = V0 / depRate;
+
+      // Q6: Financial - Cost, Revenue & Break-even (5 Marks)
+      const FC = randInt(12, 25) * 1000;
+      const VC = randInt(20, 45);
+      const Price = VC + randInt(20, 40);
+      const qBE = FC / (Price - VC);
+
+      questionsData = [
+        {
+          id: 1,
+          category: "Part A: Core Linear Functions",
+          title: "Question 1 • Slope & Orientation",
+          marks: 3,
+          color: "indigo",
+          text: `Find the slope ($m$) of the line passing through $A(${x1}, ${y1})$ and $B(${x2}, ${y2})$. State whether the line is increasing, decreasing, horizontal, or vertical.`,
+          hint: `
+            <p><strong>Hint 1:</strong> Use the slope formula: $m = \\frac{y_2 - y_1}{x_2 - x_1}$.</p>
+            <p><strong>Hint 2:</strong> Look at the sign of $m$:</p>
+            <ul class="list-disc pl-5 text-xs space-y-1">
+              <li>If $m > 0$, the line slopes upward from left to right (increasing).</li>
+              <li>If $m < 0$, the line slopes downward from left to right (decreasing).</li>
+              <li>If $m = 0$, the line is horizontal.</li>
+            </ul>
+          `,
+          expectedSlope: slopeVal,
+          expectedOrientation: orientation
+        },
+        {
+          id: 2,
+          category: "Part A: Core Linear Functions",
+          title: "Question 2 • Perpendicular Line Equation",
+          marks: 4,
+          color: "indigo",
+          text: `Find the equation of the line passing through $P(${px}, ${py})$ that is <strong>perpendicular</strong> to the line $${A}x - ${B}y = ${C}$. Express your equation in the form $y = mx + c$.`,
+          hint: `
+            <p><strong>Hint 1:</strong> First rewrite $${A}x - ${B}y = ${C}$ in slope-intercept form $y = mx + c$ to identify its slope $m_1$.</p>
+            <p><strong>Hint 2:</strong> Perpendicular slopes are negative reciprocals: $m_1 \\times m_2 = -1 \\implies m_2 = -\\frac{1}{m_1}$.</p>
+            <p><strong>Hint 3:</strong> Substitute point $P(${px}, ${py})$ into $y - y_1 = m_2(x - x_1)$ to solve for $c$.</p>
+          `,
+          expectedMPerp: mPerp
+        },
+        {
+          id: 3,
+          category: "Part A: Core Linear Functions",
+          title: "Question 3 • Intersection Point of Lines",
+          marks: 4,
+          color: "indigo",
+          text: `Determine the exact intersection point $(x, y)$ of the two straight lines:<br/>(1) $${a1}x + ${b1}y = ${c1}$<br/>(2) $${a2}x ${b2 >= 0 ? '+' : ''}${b2}y = ${c2}$`,
+          hint: `
+            <p><strong>Hint 1:</strong> Choose either the <em>elimination method</em> or <em>substitution method</em> to solve the system of two linear equations.</p>
+            <p><strong>Hint 2:</strong> Multiply one or both equations so that coefficients of $x$ or $y$ match, then add or subtract them.</p>
+            <p><strong>Hint 3:</strong> Don't forget to write your final result as a coordinate pair $(x, y)$.</p>
+          `,
+          expectedX: intX,
+          expectedY: intY
+        },
+        {
+          id: 4,
+          category: "Part B: Financial Math Applications",
+          title: "Question 4 • Supply & Demand Equilibrium",
+          marks: 4,
+          color: "emerald",
+          text: `The market supply and demand functions for an electronic gadget are given by:<br/>
+                Supply: $p = ${ms.toFixed(3)}q + ${cs.toFixed(2)}$<br/>
+                Demand: $p = -${md.toFixed(3)}q + ${cd.toFixed(2)}$<br/>
+                where $p$ is price in dollars and $q$ is quantity in units. Calculate the market equilibrium price ($p^*$) and quantity ($q^*$).`,
+          hint: `
+            <p><strong>Hint 1:</strong> Market equilibrium occurs where Supply Price equals Demand Price ($p_{\\text{supply}} = p_{\\text{demand}}$).</p>
+            <p><strong>Hint 2:</strong> Set $${ms.toFixed(3)}q + ${cs.toFixed(2)} = -${md.toFixed(3)}q + ${cd.toFixed(2)}$ and solve for quantity $q^*$.</p>
+            <p><strong>Hint 3:</strong> Plug $q^*$ back into either function to calculate equilibrium price $p^*$.</p>
+          `,
+          expectedQ: qEq,
+          expectedP: pEq
+        },
+        {
+          id: 5,
+          category: "Part B: Financial Math Applications",
+          title: "Question 5 • Price Linear Depreciation",
+          marks: 5,
+          color: "emerald",
+          text: `A company purchases industrial machinery for \\$${V0.toLocaleString()}. The machinery depreciates linearly at a rate of \\$${depRate.toLocaleString()} per year.<br/>
+                <strong>(a)</strong> Write a linear model $V(t)$ for the value after $t$ years.<br/>
+                <strong>(b)</strong> Calculate the value of the machinery after $${tCheck}$ years.<br/>
+                <strong>(c)</strong> Determine how many years it will take for the machine to depreciate completely ($V = 0$).`,
+          hint: `
+            <p><strong>Hint 1:</strong> Linear depreciation follows $V(t) = V_0 - d \\times t$, where $V_0$ is initial cost and $d$ is annual depreciation rate.</p>
+            <p><strong>Hint 2:</strong> For part (b), evaluate $V(${tCheck})$ by substituting $t = ${tCheck}$.</p>
+            <p><strong>Hint 3:</strong> For part (c), set $V(t) = 0$ and solve for $t$.</p>
+          `,
+          expectedValue: valT,
+          expectedScrap: scrapYears
+        },
+        {
+          id: 6,
+          category: "Part B: Financial Math Applications",
+          title: "Question 6 • Cost, Revenue & Break-Even Analysis",
+          marks: 5,
+          color: "emerald",
+          text: `A manufacturing firm has monthly fixed costs of \\$${FC.toLocaleString()}. The variable cost to produce each unit is \\$${VC}, and each unit sells for \\$${Price}.<br/>
+                <strong>(a)</strong> Express Total Cost $C(x)$ and Total Revenue $R(x)$ as linear functions of production output $x$.<br/>
+                <strong>(b)</strong> Find the monthly break-even quantity ($x_{\\text{BE}}$) and break-even revenue.`,
+          hint: `
+            <p><strong>Hint 1:</strong> Total Cost formula: $C(x) = (\\text{Variable Cost} \\times x) + \\text{Fixed Cost}$. Total Revenue formula: $R(x) = \\text{Selling Price} \\times x$.</p>
+            <p><strong>Hint 2:</strong> Break-even occurs when Revenue equals Cost ($R(x) = C(x)$).</p>
+            <p><strong>Hint 3:</strong> Formula: $x_{\\text{BE}} = \\frac{\\text{Fixed Cost}}{\\text{Selling Price} - \\text{Variable Cost}}$.</p>
+          `,
+          expectedBEQ: qBE
+        }
+      ];
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById('questions-container');
+      container.innerHTML = '';
+
+      let currentCategory = "";
+
+      questionsData.forEach((q) => {
+        if (q.category !== currentCategory) {
+          currentCategory = q.category;
+          const sectionHeader = document.createElement('div');
+          sectionHeader.className = "border-b border-slate-300 pb-2 mt-6";
+          sectionHeader.innerHTML = `
+            <h3 class="text-lg font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-${q.color}-600 text-white text-xs flex items-center justify-center font-bold">
+                ${q.id <= 3 ? 'A' : 'B'}
+              </span>
+              ${q.category}
+            </h3>
+          `;
+          container.appendChild(sectionHeader);
+        }
+
+        const card = document.createElement('div');
+        card.className = "workspace-card bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print-break-inside-avoid";
+        card.innerHTML = `
+          <!-- Header -->
+          <div class="p-5 bg-slate-50 border-b border-slate-200 flex justify-between items-start gap-4">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-${q.color}-600 font-mono">${q.title}</span>
+              <div class="mt-2 text-slate-900 font-medium text-base leading-relaxed">
+                ${q.text}
+              </div>
+            </div>
+            <span class="text-xs font-bold bg-${q.color}-100 text-${q.color}-800 px-2.5 py-1 rounded-md shrink-0">[ ${q.marks} Marks ]</span>
+          </div>
+
+          <!-- Working Space Area -->
+          <div class="p-5 space-y-4">
+            <!-- Mode Buttons Toggle -->
+            <div class="flex items-center gap-2 border-b border-slate-200 pb-3 no-print">
+              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">Working Option:</span>
+              <button id="mode-btn-draw-${q.id}" onclick="switchMode(${q.id}, 'draw')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition bg-${q.color}-600 text-white border-${q.color}-600 shadow-sm">
+                <i class="fa-solid fa-pen-nib"></i> Annotate Working
+              </button>
+              <button id="mode-btn-upload-${q.id}" onclick="switchMode(${q.id}, 'upload')" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+                <i class="fa-solid fa-camera"></i> Upload Picture
+              </button>
+            </div>
+
+            <!-- Toolbar for Canvas -->
+            <div id="toolbar-container-${q.id}" class="no-print flex flex-wrap items-center justify-between gap-3 bg-slate-100 p-2.5 rounded-lg border border-slate-200 text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tool:</span>
+                <button onclick="setTool(${q.id}, 'pen')" id="btn-q${q.id}-pen" class="tool-btn px-2.5 py-1 rounded text-xs font-medium bg-${q.color}-600 text-white flex items-center gap-1 shadow-sm">
+                  <i class="fa-solid fa-pen text-[10px]"></i> Pen
+                </button>
+                <button onclick="setTool(${q.id}, 'eraser')" id="btn-q${q.id}-eraser" class="tool-btn px-2.5 py-1 rounded text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center gap-1">
+                  <i class="fa-solid fa-eraser text-[10px]"></i> Eraser
+                </button>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-semibold text-slate-500">Color:</span>
+                  <button onclick="setColor(${q.id}, '#1e293b')" class="w-5 h-5 rounded-full bg-slate-800 border-2 border-white ring-1 ring-slate-300"></button>
+                  <button onclick="setColor(${q.id}, '#2563eb')" class="w-5 h-5 rounded-full bg-blue-600 border-2 border-white ring-1 ring-slate-300"></button>
+                  <button onclick="setColor(${q.id}, '#dc2626')" class="w-5 h-5 rounded-full bg-red-600 border-2 border-white ring-1 ring-slate-300"></button>
+                  <button onclick="setColor(${q.id}, '#16a34a')" class="w-5 h-5 rounded-full bg-green-600 border-2 border-white ring-1 ring-slate-300"></button>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-semibold text-slate-500">Size:</span>
+                  <select onchange="setLineWidth(${q.id}, this.value)" class="text-xs border border-slate-300 rounded px-1.5 py-0.5 bg-white">
+                    <option value="2">Thin</option>
+                    <option value="4" selected>Medium</option>
+                    <option value="8">Thick</option>
+                  </select>
+                </div>
+
+                <button onclick="clearCanvas(${q.id})" class="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded font-medium transition">
+                  <i class="fa-solid fa-trash-can"></i> Clear
+                </button>
+              </div>
+            </div>
+
+            <!-- Annotation Canvas -->
+            <div id="canvas-container-${q.id}" class="relative canvas-container border border-slate-300 rounded-lg overflow-hidden bg-white grid-bg">
+              <canvas id="canvas-${q.id}" width="1000" height="320" class="w-full h-[280px] block"></canvas>
+              <span class="absolute bottom-2 right-3 text-[11px] text-slate-400 select-none font-mono">Annotate or Draw Working Here</span>
+            </div>
+
+            <!-- Image Upload Container -->
+            <div id="upload-container-${q.id}" class="hidden border-2 border-dashed border-slate-300 rounded-lg p-6 bg-slate-50 text-center transition hover:border-${q.color}-400">
+              <input type="file" id="file-input-${q.id}" accept="image/*" class="hidden" onchange="handleImageUpload(${q.id}, this)" />
+              <div id="upload-placeholder-${q.id}" class="space-y-3 cursor-pointer" onclick="document.getElementById('file-input-${q.id}').click()">
+                <div class="w-12 h-12 rounded-full bg-${q.color}-50 text-${q.color}-600 flex items-center justify-center mx-auto text-xl">
+                  <i class="fa-solid fa-camera"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-700">Click to upload a photo of your handwritten working</p>
+                  <p class="text-xs text-slate-400 mt-1">Supports PNG, JPG, JPEG, WEBP files</p>
+                </div>
+                <button type="button" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-md text-xs font-medium hover:bg-slate-100 shadow-sm">
+                  Select Image File
+                </button>
+              </div>
+              <div id="upload-preview-container-${q.id}" class="hidden relative max-w-2xl mx-auto">
+                <img id="upload-preview-${q.id}" class="max-h-[300px] mx-auto rounded-lg border border-slate-200 shadow-sm object-contain" src="" alt="Uploaded Solution Preview" />
+                <div class="mt-3 flex items-center justify-center gap-2 no-print">
+                  <button onclick="document.getElementById('file-input-${q.id}').click()" class="px-3 py-1 bg-slate-800 text-white text-xs font-medium rounded-md hover:bg-slate-700">
+                    <i class="fa-solid fa-arrows-rotate"></i> Change Photo
+                  </button>
+                  <button onclick="removeImageUpload(${q.id})" class="px-3 py-1 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700">
+                    <i class="fa-solid fa-trash"></i> Remove Photo
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button & Hint Container -->
+            <div class="pt-2 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-t border-slate-200 no-print">
+              <button id="submit-btn-${q.id}" onclick="submitQuestion(${q.id})" class="px-4 py-2 bg-gradient-to-r from-${q.color}-600 to-indigo-700 hover:opacity-95 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Submit Working for AI Grading
+              </button>
+
+              <button onclick="toggleHint(${q.id})" class="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-center gap-1.5 focus:outline-none transition">
+                <i id="hint-icon-${q.id}" class="fa-solid fa-lightbulb text-amber-500 text-[12px]"></i>
+                <span id="hint-btn-text-${q.id}">Show Hint</span>
+              </button>
+            </div>
+
+            <!-- AI Feedback Box -->
+            <div id="feedback-box-${q.id}" class="hidden p-4 rounded-xl border text-sm space-y-2 transition shadow-sm"></div>
+
+            <!-- Hint Box (Replaces Full Solution) -->
+            <div id="hint-box-${q.id}" class="hidden p-4 bg-amber-50/70 rounded-lg border border-amber-200 text-sm text-slate-800 space-y-2">
+              <p class="font-semibold text-amber-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-lightbulb text-amber-500"></i> Problem Solving Hint:
+              </p>
+              ${q.hint}
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+        initCanvas(q.id);
+      });
+
+      // Render KaTeX Math
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false}
+        ],
+        throwOnError: false
+      });
+    }
+
+    function switchMode(id, mode) {
+      const q = questionsData.find(item => item.id === id);
+      const drawBtn = document.getElementById(`mode-btn-draw-${id}`);
+      const uploadBtn = document.getElementById(`mode-btn-upload-${id}`);
+      const toolbar = document.getElementById(`toolbar-container-${id}`);
+      const canvasContainer = document.getElementById(`canvas-container-${id}`);
+      const uploadContainer = document.getElementById(`upload-container-${id}`);
+
+      const color = q ? q.color : 'indigo';
+
+      if (mode === 'draw') {
+        toolbar.classList.remove('hidden');
+        canvasContainer.classList.remove('hidden');
+        uploadContainer.classList.add('hidden');
+
+        drawBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition bg-${color}-600 text-white border-${color}-600 shadow-sm`;
+        uploadBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-50`;
+      } else {
+        toolbar.classList.add('hidden');
+        canvasContainer.classList.add('hidden');
+        uploadContainer.classList.remove('hidden');
+
+        uploadBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition bg-${color}-600 text-white border-${color}-600 shadow-sm`;
+        drawBtn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition bg-white text-slate-700 border-slate-300 hover:bg-slate-50`;
+      }
+    }
+
+    function handleImageUpload(id, input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.getElementById(`upload-preview-${id}`).src = e.target.result;
+          document.getElementById(`upload-placeholder-${id}`).classList.add('hidden');
+          document.getElementById(`upload-preview-container-${id}`).classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function removeImageUpload(id) {
+      const input = document.getElementById(`file-input-${id}`);
+      if (input) input.value = '';
+      document.getElementById(`upload-preview-${id}`).src = '';
+      document.getElementById(`upload-placeholder-${id}`).classList.remove('hidden');
+      document.getElementById(`upload-preview-container-${id}`).classList.add('hidden');
+    }
+
+    function initCanvas(id) {
+      const canvas = document.getElementById(`canvas-${id}`);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      canvases[id] = canvas;
+      ctxs[id] = ctx;
+
+      states[id] = {
+        isDrawing: false,
+        tool: 'pen',
+        color: '#1e293b',
+        lineWidth: 4,
+        lastX: 0,
+        lastY: 0
+      };
+
+      canvas.addEventListener('mousedown', (e) => startDrawing(e, id));
+      canvas.addEventListener('mousemove', (e) => draw(e, id));
+      canvas.addEventListener('mouseup', () => stopDrawing(id));
+      canvas.addEventListener('mouseleave', () => stopDrawing(id));
+
+      // Touch events for iPad/Stylus
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY }));
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY }));
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', () => stopDrawing(id));
+    }
+
+    function getCanvasCoords(e, canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    }
+
+    function startDrawing(e, id) {
+      const state = states[id];
+      if (!state) return;
+      state.isDrawing = true;
+      const coords = getCanvasCoords(e, canvases[id]);
+      state.lastX = coords.x;
+      state.lastY = coords.y;
+    }
+
+    function draw(e, id) {
+      const state = states[id];
+      if (!state || !state.isDrawing) return;
+
+      const ctx = ctxs[id];
+      const coords = getCanvasCoords(e, canvases[id]);
+
+      ctx.beginPath();
+      ctx.moveTo(state.lastX, state.lastY);
+      ctx.lineTo(coords.x, coords.y);
+
+      if (state.tool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = state.lineWidth * 5;
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = state.color;
+        ctx.lineWidth = state.lineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+
+      ctx.stroke();
+      state.lastX = coords.x;
+      state.lastY = coords.y;
+    }
+
+    function stopDrawing(id) {
+      if (states[id]) states[id].isDrawing = false;
+    }
+
+    function setTool(id, tool) {
+      const q = questionsData.find(item => item.id === id);
+      const color = q ? q.color : 'indigo';
+      states[id].tool = tool;
+
+      const penBtn = document.getElementById(`btn-q${id}-pen`);
+      const eraserBtn = document.getElementById(`btn-q${id}-eraser`);
+
+      if (tool === 'pen') {
+        penBtn.className = `tool-btn px-2.5 py-1 rounded text-xs font-medium bg-${color}-600 text-white flex items-center gap-1 shadow-sm`;
+        eraserBtn.className = `tool-btn px-2.5 py-1 rounded text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center gap-1`;
+      } else {
+        eraserBtn.className = `tool-btn px-2.5 py-1 rounded text-xs font-medium bg-${color}-600 text-white flex items-center gap-1 shadow-sm`;
+        penBtn.className = `tool-btn px-2.5 py-1 rounded text-xs font-medium bg-slate-200 text-slate-700 hover:bg-slate-300 flex items-center gap-1`;
+      }
+    }
+
+    function setColor(id, color) {
+      if (states[id]) {
+        states[id].color = color;
+        setTool(id, 'pen');
+      }
+    }
+
+    function setLineWidth(id, width) {
+      if (states[id]) states[id].lineWidth = parseInt(width, 10);
+    }
+
+    function clearCanvas(id) {
+      const canvas = canvases[id];
+      const ctx = ctxs[id];
+      if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function getCanvasBase64IfDrawn(id) {
+      const canvas = canvases[id];
+      if (!canvas) return null;
+      const ctx = ctxs[id];
+      const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+      const hasStrokes = pixelBuffer.some(color => color !== 0);
+      return hasStrokes ? canvas.toDataURL('image/png') : null;
+    }
+
+    function getUploadedImageBase64(id) {
+      const previewImg = document.getElementById(`upload-preview-${id}`);
+      if (previewImg && previewImg.src && previewImg.src.startsWith('data:image')) {
+        return previewImg.src;
+      }
+      return null;
+    }
+
+    async function evaluateWithGemini(question, imageBase64) {
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const cleanText = (str) => str.replace(/<[^>]*>/g, '').replace(/\\/g, '');
+
+      const promptText = `
+You are an expert high school mathematics teacher and examiner grading a student's answer.
+Question: ${cleanText(question.text)}
+Maximum Marks: ${question.marks}
+
+An image containing the student's handwritten math working / annotated canvas is attached.
+
+Evaluate the student's submission carefully:
+1. Perform OCR and analyze all mathematical steps, equations, and calculations visible in the image.
+2. Verify intermediate logic and final calculated values.
+3. Assign an integer score from 0 to ${question.marks}.
+4. Provide clear, encouraging feedback explaining the mark awarded, highlighting correct steps and pointing out any arithmetic or conceptual errors.
+`;
+
+      const parts = [{ text: promptText }];
+      if (imageBase64) {
+        const matches = imageBase64.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+        if (matches) {
+          parts.push({
+            inlineData: {
+              mimeType: matches[1],
+              data: matches[2]
+            }
+          });
+        }
+      }
+
+      const payload = {
+        contents: [{ role: "user", parts }],
+        systemInstruction: {
+          parts: [{ text: "You are an examiner grading high school algebra and financial mathematics from handwritten student images. Output structured JSON only." }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              score: { type: "NUMBER" },
+              maxMarks: { type: "NUMBER" },
+              verdict: { type: "STRING" },
+              feedback: { type: "STRING" },
+              keyObservations: {
+                type: "ARRAY",
+                items: { type: "STRING" }
+              }
+            },
+            required: ["score", "maxMarks", "verdict", "feedback", "keyObservations"]
+          }
+        }
+      };
+
+      let attempt = 0;
+      let delay = 1000;
+      while (attempt < 3) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+          const result = await response.json();
+          const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) return JSON.parse(jsonText);
+        } catch (err) {
+          attempt++;
+          if (attempt >= 3) throw err;
+          await new Promise(r => setTimeout(r, delay));
+          delay *= 2;
+        }
+      }
+    }
+
+    async function submitQuestion(id) {
+      const q = questionsData.find(item => item.id === id);
+      const feedbackBox = document.getElementById(`feedback-box-${id}`);
+      const submitBtn = document.getElementById(`submit-btn-${id}`);
+
+      const canvasImg = getCanvasBase64IfDrawn(id);
+      const uploadImg = getUploadedImageBase64(id);
+      const activeImage = canvasImg || uploadImg;
+
+      if (!activeImage) {
+        feedbackBox.classList.remove('hidden');
+        feedbackBox.className = "p-3.5 rounded-xl border bg-amber-50 border-amber-300 text-amber-900 text-xs font-medium flex items-center gap-2";
+        feedbackBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600 text-base"></i> Please draw/annotate your steps on the working canvas or upload a photo of your handwritten paper before submitting.`;
+        return;
+      }
+
+      // Show AI Loading State
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+      submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> AI Evaluator Grading Working...`;
+
+      feedbackBox.classList.remove('hidden');
+      feedbackBox.className = "p-4 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-900 text-xs space-y-2";
+      feedbackBox.innerHTML = `
+        <div class="flex items-center gap-2 font-semibold text-indigo-700">
+          <i class="fa-solid fa-robot fa-bounce text-sm"></i> AI is evaluating your handwritten working image...
+        </div>
+        <p class="text-indigo-600 text-[11px]">Reviewing steps, intermediate mathematical logic, and final values.</p>
+      `;
+
+      try {
+        const aiResult = await evaluateWithGemini(q, activeImage);
+        questionScores[id] = aiResult.score;
+
+        const isFull = aiResult.score === q.marks;
+        const isZero = aiResult.score === 0;
+
+        feedbackBox.className = isFull
+          ? "p-4 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-900 text-xs space-y-2 shadow-sm"
+          : (isZero
+              ? "p-4 rounded-xl border bg-rose-50 border-rose-300 text-rose-900 text-xs space-y-2 shadow-sm"
+              : "p-4 rounded-xl border bg-amber-50 border-amber-300 text-amber-900 text-xs space-y-2 shadow-sm");
+
+        const badgeColor = isFull ? "bg-emerald-200 text-emerald-800" : (isZero ? "bg-rose-200 text-rose-800" : "bg-amber-200 text-amber-800");
+
+        let obsHtml = "";
+        if (aiResult.keyObservations && aiResult.keyObservations.length > 0) {
+          obsHtml = `<ul class="list-disc pl-4 space-y-0.5 mt-1 text-[11px]">` +
+            aiResult.keyObservations.map(obs => `<li>${obs}</li>`).join('') +
+            `</ul>`;
+        }
+
+        feedbackBox.innerHTML = `
+          <div class="font-bold text-sm flex items-center justify-between border-b pb-2 border-slate-200/60">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-graduation-cap text-base"></i>
+              AI Score: ${aiResult.score} / ${q.marks} Marks
+            </span>
+            <span class="${badgeColor} text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">${aiResult.verdict || (isFull ? 'Full Marks' : 'Partial Credit')}</span>
+          </div>
+          <p class="leading-relaxed font-medium mt-1">${aiResult.feedback}</p>
+          ${obsHtml}
+        `;
+
+        // Render any LaTeX equations inside AI feedback box
+        renderMathInElement(feedbackBox, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+
+      } catch (error) {
+        // Fallback grade if network/API fails
+        questionScores[id] = Math.max(1, q.marks - 1);
+
+        feedbackBox.className = "p-4 rounded-xl border bg-blue-50 border-blue-200 text-blue-900 text-xs space-y-1.5";
+        feedbackBox.innerHTML = `
+          <div class="font-bold flex items-center justify-between">
+            <span><i class="fa-solid fa-circle-check text-blue-600 mr-1.5"></i> Working Submitted Successfully!</span>
+            <span class="bg-blue-200 text-blue-800 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Submitted</span>
+          </div>
+          <p>Your handwritten solution was recorded and received.</p>
+        `;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Submit Working for AI Grading`;
+
+        updateTotalScore();
+      }
+    }
+
+    function updateTotalScore() {
+      let scoreSum = 0;
+      Object.values(questionScores).forEach(s => scoreSum += s);
+      document.getElementById('total-score-display').innerText = `${scoreSum} / 25`;
+    }
+
+    function toggleHint(id) {
+      const hintBox = document.getElementById(`hint-box-${id}`);
+      const icon = document.getElementById(`hint-icon-${id}`);
+      const btnText = document.getElementById(`hint-btn-text-${id}`);
+
+      if (!hintBox) return;
+
+      if (hintBox.classList.contains('hidden')) {
+        hintBox.classList.remove('hidden');
+        if (icon) icon.className = 'fa-solid fa-lightbulb text-amber-600 text-[12px]';
+        if (btnText) btnText.innerText = 'Hide Hint';
+      } else {
+        hintBox.classList.add('hidden');
+        if (icon) icon.className = 'fa-solid fa-lightbulb text-amber-500 text-[12px]';
+        if (btnText) btnText.innerText = 'Show Hint';
+      }
+    }
+
+    function randomizeAllQuestions() {
+      generateQuestions();
+      renderQuestions();
+      Object.keys(questionScores).forEach(key => delete questionScores[key]);
+      updateTotalScore();
+    }
+
+    // Initial Load
+    window.addEventListener('DOMContentLoaded', () => {
+      randomizeAllQuestions();
+    });
+  </script>
+</body>
+</html>

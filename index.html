@@ -58,11 +58,6 @@
         <button onclick="window.print()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition flex items-center gap-1.5 shadow-sm">
           <i class="fa-solid fa-print"></i> Print
         </button>
-
-        <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-md text-xs font-mono text-emerald-400 flex items-center gap-2">
-          <span>AI Total Score:</span>
-          <span id="total-score-display" class="font-bold text-sm text-white">0 / 25</span>
-        </div>
       </div>
     </div>
   </header>
@@ -77,7 +72,6 @@
       <div class="hidden print:block text-right text-xs text-slate-700 space-y-1">
         <p class="font-bold text-sm text-slate-900">Student: ______________________</p>
         <p>Date: ________________________</p>
-        <p>Total Score: ______ / 25 Marks</p>
       </div>
     </div>
   </div>
@@ -91,10 +85,29 @@
     const canvases = {};
     const ctxs = {};
     const states = {};
-    const questionScores = {};
 
     function randInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Helper to format linear expressions cleanly (omitting coefficient 1 or -1)
+    function formatLinearExpr(a, b, c, var1 = 'x', var2 = 'y') {
+      let term1 = '';
+      if (a !== 0) {
+        if (a === 1) term1 = var1;
+        else if (a === -1) term1 = `-${var1}`;
+        else term1 = `${a}${var1}`;
+      }
+
+      let term2 = '';
+      if (b !== 0) {
+        let absB = Math.abs(b);
+        let sign = b > 0 ? (term1 ? ' + ' : '') : (term1 ? ' - ' : '-');
+        let coeffB = (absB === 1) ? '' : absB;
+        term2 = `${sign}${coeffB}${var2}`;
+      }
+
+      return `${term1}${term2} = ${c}`;
     }
 
     function generateQuestions() {
@@ -113,17 +126,19 @@
       const px = randInt(-4, 5);
       const py = randInt(-5, 6);
       const A = randInt(1, 4);
-      const B = randInt(2, 5);
+      const B = randInt(1, 5);
       const C = randInt(6, 15);
-      const mPerp = -B / A;
+      const lineEq2 = formatLinearExpr(A, -B, C); // Ax - By = C
 
       // Q3: Intersection Point of Two Lines (4 Marks)
       const intX = randInt(-4, 5);
       const intY = randInt(-4, 5);
-      const a1 = randInt(1, 3), b1 = randInt(2, 4);
+      const a1 = randInt(1, 3), b1 = randInt(1, 4);
       const c1 = a1 * intX + b1 * intY;
-      let a2 = randInt(2, 5), b2 = -randInt(1, 4);
+      let a2 = randInt(1, 4), b2 = -randInt(1, 4);
       const c2 = a2 * intX + b2 * intY;
+      const line1 = formatLinearExpr(a1, b1, c1);
+      const line2 = formatLinearExpr(a2, b2, c2);
 
       // Q4: Financial - Supply & Demand Equilibrium (4 Marks)
       const qEq = randInt(12, 35) * 10;
@@ -137,14 +152,11 @@
       const V0 = randInt(30, 60) * 1000;
       const depRate = randInt(3, 6) * 1000;
       const tCheck = randInt(3, 6);
-      const valT = V0 - depRate * tCheck;
-      const scrapYears = V0 / depRate;
 
       // Q6: Financial - Cost, Revenue & Break-even (5 Marks)
       const FC = randInt(12, 25) * 1000;
       const VC = randInt(20, 45);
       const Price = VC + randInt(20, 40);
-      const qBE = FC / (Price - VC);
 
       questionsData = [
         {
@@ -162,9 +174,7 @@
               <li>If $m < 0$, the line slopes downward from left to right (decreasing).</li>
               <li>If $m = 0$, the line is horizontal.</li>
             </ul>
-          `,
-          expectedSlope: slopeVal,
-          expectedOrientation: orientation
+          `
         },
         {
           id: 2,
@@ -172,13 +182,12 @@
           title: "Question 2 • Perpendicular Line Equation",
           marks: 4,
           color: "indigo",
-          text: `Find the equation of the line passing through $P(${px}, ${py})$ that is <strong>perpendicular</strong> to the line $${A}x - ${B}y = ${C}$. Express your equation in the form $y = mx + c$.`,
+          text: `Find the equation of the line passing through $P(${px}, ${py})$ that is <strong>perpendicular</strong> to the line $${lineEq2}$. Express your equation in the form $y = mx + c$.`,
           hint: `
-            <p><strong>Hint 1:</strong> First rewrite $${A}x - ${B}y = ${C}$ in slope-intercept form $y = mx + c$ to identify its slope $m_1$.</p>
+            <p><strong>Hint 1:</strong> First rewrite $${lineEq2}$ in slope-intercept form $y = mx + c$ to identify its slope $m_1$.</p>
             <p><strong>Hint 2:</strong> Perpendicular slopes are negative reciprocals: $m_1 \\times m_2 = -1 \\implies m_2 = -\\frac{1}{m_1}$.</p>
             <p><strong>Hint 3:</strong> Substitute point $P(${px}, ${py})$ into $y - y_1 = m_2(x - x_1)$ to solve for $c$.</p>
-          `,
-          expectedMPerp: mPerp
+          `
         },
         {
           id: 3,
@@ -186,14 +195,12 @@
           title: "Question 3 • Intersection Point of Lines",
           marks: 4,
           color: "indigo",
-          text: `Determine the exact intersection point $(x, y)$ of the two straight lines:<br/>(1) $${a1}x + ${b1}y = ${c1}$<br/>(2) $${a2}x ${b2 >= 0 ? '+' : ''}${b2}y = ${c2}$`,
+          text: `Determine the exact intersection point $(x, y)$ of the two straight lines:<br/>(1) $${line1}$<br/>(2) $${line2}$`,
           hint: `
             <p><strong>Hint 1:</strong> Choose either the <em>elimination method</em> or <em>substitution method</em> to solve the system of two linear equations.</p>
             <p><strong>Hint 2:</strong> Multiply one or both equations so that coefficients of $x$ or $y$ match, then add or subtract them.</p>
             <p><strong>Hint 3:</strong> Don't forget to write your final result as a coordinate pair $(x, y)$.</p>
-          `,
-          expectedX: intX,
-          expectedY: intY
+          `
         },
         {
           id: 4,
@@ -209,9 +216,7 @@
             <p><strong>Hint 1:</strong> Market equilibrium occurs where Supply Price equals Demand Price ($p_{\\text{supply}} = p_{\\text{demand}}$).</p>
             <p><strong>Hint 2:</strong> Set $${ms.toFixed(3)}q + ${cs.toFixed(2)} = -${md.toFixed(3)}q + ${cd.toFixed(2)}$ and solve for quantity $q^*$.</p>
             <p><strong>Hint 3:</strong> Plug $q^*$ back into either function to calculate equilibrium price $p^*$.</p>
-          `,
-          expectedQ: qEq,
-          expectedP: pEq
+          `
         },
         {
           id: 5,
@@ -227,9 +232,7 @@
             <p><strong>Hint 1:</strong> Linear depreciation follows $V(t) = V_0 - d \\times t$, where $V_0$ is initial cost and $d$ is annual depreciation rate.</p>
             <p><strong>Hint 2:</strong> For part (b), evaluate $V(${tCheck})$ by substituting $t = ${tCheck}$.</p>
             <p><strong>Hint 3:</strong> For part (c), set $V(t) = 0$ and solve for $t$.</p>
-          `,
-          expectedValue: valT,
-          expectedScrap: scrapYears
+          `
         },
         {
           id: 6,
@@ -244,8 +247,7 @@
             <p><strong>Hint 1:</strong> Total Cost formula: $C(x) = (\\text{Variable Cost} \\times x) + \\text{Fixed Cost}$. Total Revenue formula: $R(x) = \\text{Selling Price} \\times x$.</p>
             <p><strong>Hint 2:</strong> Break-even occurs when Revenue equals Cost ($R(x) = C(x)$).</p>
             <p><strong>Hint 3:</strong> Formula: $x_{\\text{BE}} = \\frac{\\text{Fixed Cost}}{\\text{Selling Price} - \\text{Variable Cost}}$.</p>
-          `,
-          expectedBEQ: qBE
+          `
         }
       ];
     }
@@ -369,22 +371,15 @@
               </div>
             </div>
 
-            <!-- Submit Button & Hint Container -->
-            <div class="pt-2 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-t border-slate-200 no-print">
-              <button id="submit-btn-${q.id}" onclick="submitQuestion(${q.id})" class="px-4 py-2 bg-gradient-to-r from-${q.color}-600 to-indigo-700 hover:opacity-95 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Submit Working for AI Grading
-              </button>
-
+            <!-- Hint Toggle Button -->
+            <div class="pt-2 flex justify-end border-t border-slate-200 no-print">
               <button onclick="toggleHint(${q.id})" class="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-center gap-1.5 focus:outline-none transition">
                 <i id="hint-icon-${q.id}" class="fa-solid fa-lightbulb text-amber-500 text-[12px]"></i>
                 <span id="hint-btn-text-${q.id}">Show Hint</span>
               </button>
             </div>
 
-            <!-- AI Feedback Box -->
-            <div id="feedback-box-${q.id}" class="hidden p-4 rounded-xl border text-sm space-y-2 transition shadow-sm"></div>
-
-            <!-- Hint Box (Replaces Full Solution) -->
+            <!-- Hint Box -->
             <div id="hint-box-${q.id}" class="hidden p-4 bg-amber-50/70 rounded-lg border border-amber-200 text-sm text-slate-800 space-y-2">
               <p class="font-semibold text-amber-900 flex items-center gap-1.5">
                 <i class="fa-solid fa-lightbulb text-amber-500"></i> Problem Solving Hint:
@@ -573,203 +568,6 @@
       if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    function getCanvasBase64IfDrawn(id) {
-      const canvas = canvases[id];
-      if (!canvas) return null;
-      const ctx = ctxs[id];
-      const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-      const hasStrokes = pixelBuffer.some(color => color !== 0);
-      return hasStrokes ? canvas.toDataURL('image/png') : null;
-    }
-
-    function getUploadedImageBase64(id) {
-      const previewImg = document.getElementById(`upload-preview-${id}`);
-      if (previewImg && previewImg.src && previewImg.src.startsWith('data:image')) {
-        return previewImg.src;
-      }
-      return null;
-    }
-
-    async function evaluateWithGemini(question, imageBase64) {
-      const apiKey = "";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-      const cleanText = (str) => str.replace(/<[^>]*>/g, '').replace(/\\/g, '');
-
-      const promptText = `
-You are an expert high school mathematics teacher and examiner grading a student's answer.
-Question: ${cleanText(question.text)}
-Maximum Marks: ${question.marks}
-
-An image containing the student's handwritten math working / annotated canvas is attached.
-
-Evaluate the student's submission carefully:
-1. Perform OCR and analyze all mathematical steps, equations, and calculations visible in the image.
-2. Verify intermediate logic and final calculated values.
-3. Assign an integer score from 0 to ${question.marks}.
-4. Provide clear, encouraging feedback explaining the mark awarded, highlighting correct steps and pointing out any arithmetic or conceptual errors.
-`;
-
-      const parts = [{ text: promptText }];
-      if (imageBase64) {
-        const matches = imageBase64.match(/^data:(image\/[a-z]+);base64,(.+)$/);
-        if (matches) {
-          parts.push({
-            inlineData: {
-              mimeType: matches[1],
-              data: matches[2]
-            }
-          });
-        }
-      }
-
-      const payload = {
-        contents: [{ role: "user", parts }],
-        systemInstruction: {
-          parts: [{ text: "You are an examiner grading high school algebra and financial mathematics from handwritten student images. Output structured JSON only." }]
-        },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              score: { type: "NUMBER" },
-              maxMarks: { type: "NUMBER" },
-              verdict: { type: "STRING" },
-              feedback: { type: "STRING" },
-              keyObservations: {
-                type: "ARRAY",
-                items: { type: "STRING" }
-              }
-            },
-            required: ["score", "maxMarks", "verdict", "feedback", "keyObservations"]
-          }
-        }
-      };
-
-      let attempt = 0;
-      let delay = 1000;
-      while (attempt < 3) {
-        try {
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-          const result = await response.json();
-          const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (jsonText) return JSON.parse(jsonText);
-        } catch (err) {
-          attempt++;
-          if (attempt >= 3) throw err;
-          await new Promise(r => setTimeout(r, delay));
-          delay *= 2;
-        }
-      }
-    }
-
-    async function submitQuestion(id) {
-      const q = questionsData.find(item => item.id === id);
-      const feedbackBox = document.getElementById(`feedback-box-${id}`);
-      const submitBtn = document.getElementById(`submit-btn-${id}`);
-
-      const canvasImg = getCanvasBase64IfDrawn(id);
-      const uploadImg = getUploadedImageBase64(id);
-      const activeImage = canvasImg || uploadImg;
-
-      if (!activeImage) {
-        feedbackBox.classList.remove('hidden');
-        feedbackBox.className = "p-3.5 rounded-xl border bg-amber-50 border-amber-300 text-amber-900 text-xs font-medium flex items-center gap-2";
-        feedbackBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600 text-base"></i> Please draw/annotate your steps on the working canvas or upload a photo of your handwritten paper before submitting.`;
-        return;
-      }
-
-      // Show AI Loading State
-      submitBtn.disabled = true;
-      submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
-      submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> AI Evaluator Grading Working...`;
-
-      feedbackBox.classList.remove('hidden');
-      feedbackBox.className = "p-4 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-900 text-xs space-y-2";
-      feedbackBox.innerHTML = `
-        <div class="flex items-center gap-2 font-semibold text-indigo-700">
-          <i class="fa-solid fa-robot fa-bounce text-sm"></i> AI is evaluating your handwritten working image...
-        </div>
-        <p class="text-indigo-600 text-[11px]">Reviewing steps, intermediate mathematical logic, and final values.</p>
-      `;
-
-      try {
-        const aiResult = await evaluateWithGemini(q, activeImage);
-        questionScores[id] = aiResult.score;
-
-        const isFull = aiResult.score === q.marks;
-        const isZero = aiResult.score === 0;
-
-        feedbackBox.className = isFull
-          ? "p-4 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-900 text-xs space-y-2 shadow-sm"
-          : (isZero
-              ? "p-4 rounded-xl border bg-rose-50 border-rose-300 text-rose-900 text-xs space-y-2 shadow-sm"
-              : "p-4 rounded-xl border bg-amber-50 border-amber-300 text-amber-900 text-xs space-y-2 shadow-sm");
-
-        const badgeColor = isFull ? "bg-emerald-200 text-emerald-800" : (isZero ? "bg-rose-200 text-rose-800" : "bg-amber-200 text-amber-800");
-
-        let obsHtml = "";
-        if (aiResult.keyObservations && aiResult.keyObservations.length > 0) {
-          obsHtml = `<ul class="list-disc pl-4 space-y-0.5 mt-1 text-[11px]">` +
-            aiResult.keyObservations.map(obs => `<li>${obs}</li>`).join('') +
-            `</ul>`;
-        }
-
-        feedbackBox.innerHTML = `
-          <div class="font-bold text-sm flex items-center justify-between border-b pb-2 border-slate-200/60">
-            <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-graduation-cap text-base"></i>
-              AI Score: ${aiResult.score} / ${q.marks} Marks
-            </span>
-            <span class="${badgeColor} text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">${aiResult.verdict || (isFull ? 'Full Marks' : 'Partial Credit')}</span>
-          </div>
-          <p class="leading-relaxed font-medium mt-1">${aiResult.feedback}</p>
-          ${obsHtml}
-        `;
-
-        // Render any LaTeX equations inside AI feedback box
-        renderMathInElement(feedbackBox, {
-          delimiters: [
-            {left: '$$', right: '$$', display: true},
-            {left: '$', right: '$', display: false}
-          ],
-          throwOnError: false
-        });
-
-      } catch (error) {
-        // Fallback grade if network/API fails
-        questionScores[id] = Math.max(1, q.marks - 1);
-
-        feedbackBox.className = "p-4 rounded-xl border bg-blue-50 border-blue-200 text-blue-900 text-xs space-y-1.5";
-        feedbackBox.innerHTML = `
-          <div class="font-bold flex items-center justify-between">
-            <span><i class="fa-solid fa-circle-check text-blue-600 mr-1.5"></i> Working Submitted Successfully!</span>
-            <span class="bg-blue-200 text-blue-800 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Submitted</span>
-          </div>
-          <p>Your handwritten solution was recorded and received.</p>
-        `;
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
-        submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Submit Working for AI Grading`;
-
-        updateTotalScore();
-      }
-    }
-
-    function updateTotalScore() {
-      let scoreSum = 0;
-      Object.values(questionScores).forEach(s => scoreSum += s);
-      document.getElementById('total-score-display').innerText = `${scoreSum} / 25`;
-    }
-
     function toggleHint(id) {
       const hintBox = document.getElementById(`hint-box-${id}`);
       const icon = document.getElementById(`hint-icon-${id}`);
@@ -791,8 +589,6 @@ Evaluate the student's submission carefully:
     function randomizeAllQuestions() {
       generateQuestions();
       renderQuestions();
-      Object.keys(questionScores).forEach(key => delete questionScores[key]);
-      updateTotalScore();
     }
 
     // Initial Load
